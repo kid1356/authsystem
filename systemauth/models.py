@@ -3,6 +3,7 @@ from django.db import models
 # Create your models here.
 from django.db import models
 from django.contrib.auth.models import BaseUserManager,AbstractBaseUser
+from pyotp import random_base32
 
 #  Custom User Manager
 class UserManager(BaseUserManager):
@@ -54,6 +55,7 @@ class User(AbstractBaseUser):
   CNIC = models.CharField(max_length=30, null=True, blank=True)
   contact = models.IntegerField( null=True, blank=True)
   city = models.CharField(max_length=30,null=True, blank=True)
+  secret_key = models.CharField(max_length=16, blank=True, null=True)
   is_active = models.BooleanField(default=True)
   is_admin = models.BooleanField(default=False)
  
@@ -80,3 +82,9 @@ class User(AbstractBaseUser):
       "Is the user a member of staff?"
       # Simplest possible answer: All admins are staff
       return self.is_admin
+  
+  def generate_and_store_otp_secret_key(self):
+        if not self.secret_key:
+            secret_key = random_base32()
+            self.secret_key = secret_key
+            self.save()
