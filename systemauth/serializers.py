@@ -80,8 +80,16 @@ class ResetPasswordSendEmailSerializer(serializers.Serializer):
         user.generate_and_store_otp_secret_key()
 
         otp_secret_key = user.secret_key
+        print("sssss..............",otp_secret_key)
         otp = TOTP(otp_secret_key)
+
+        print(".otp..............",otp)
         otp_value = otp.now()
+        print(".otp..............",otp_value)
+
+        print("user.................",user.secret_key)
+        a= User.objects.get(secret_key=otp_secret_key)
+        print("aaaaaaaaaaaaa................",a)
         # Send the OTP to the user's email
         data = {
             'subject': 'Your Password Reset OTP',
@@ -101,15 +109,24 @@ class ResetForgetPasswordSerializer(serializers.Serializer):
         otp = attrs.get('otp')
         password = attrs.get('password')
         password2 = attrs.get('password2')
-        uid = self.context.get('uid')
-        # token = self.context.get('token')
-
+     
+        print("otp..............",otp)
         # Decode the UID to get the user
-        user_id = smart_str(urlsafe_base64_decode(uid))
-        user = User.objects.get(id=user_id)
+
+        user = User.objects.get(email="engr.adeelkhan2002@gmail.com")
+
+        
+        # print("screst .....................",user.secret_key)
+        print("user ..............",user.secret_key)
+        
+        if otp == user.secret_key:
+            print("valid-----------------")
+        else:
+            print("invalid----------")
 
         # Verify the OTP
         otp_validator = TOTP(user.secret_key)
+        print("validate..........",otp_validator.verify(otp))
         if not otp_validator.verify(otp):
             raise serializers.ValidationError('Invalid OTP')
 
