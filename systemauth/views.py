@@ -72,8 +72,9 @@ class UserResetEmailView(APIView):
     
 
 class ResetForgetPasswordView(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
-        serializer = ResetForgetPasswordSerializer(data=request.data)
+        serializer = ResetForgetPasswordSerializer(data=request.data,context={'user':request.user})
         serializer.is_valid(raise_exception=True)
 
         return Response({'msg':'Password Reset Successfully'}, status= status.HTTP_200_OK)

@@ -141,3 +141,8 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_HOST_USER = '' #write your email here 
 EMAIL_HOST_PASSWORD = '' #write your password 
 EMAIL_DEBUG = True  # Add this line for debugging output
+
+
+TOTP_TIME_STEP = 90
+TOTP_DIGITS = 4
+TOTP_ALGORITHM = 'sha256' 

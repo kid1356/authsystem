@@ -6,6 +6,7 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from .utils import Util
 from pyotp import TOTP
 from django.contrib.auth import password_validation
+from authentication.settings import *
 
 class RegisterSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(style = {'input_type':'password'},write_only = True)
@@ -81,13 +82,13 @@ class ResetPasswordSendEmailSerializer(serializers.Serializer):
 
         otp_secret_key = user.secret_key
         print("sssss..............",otp_secret_key)
-        otp = TOTP(otp_secret_key)
+        otp = TOTP(otp_secret_key, digits= TOTP_DIGITS, interval=TOTP_TIME_STEP, digest=TOTP_ALGORITHM)
 
         print(".otp..............",otp)
         otp_value = otp.now()
         print(".otp..............",otp_value)
 
-        print("user.................",user.secret_key)
+
         a= User.objects.get(secret_key=otp_secret_key)
         print("aaaaaaaaaaaaa................",a)
         # Send the OTP to the user's email
@@ -101,45 +102,41 @@ class ResetPasswordSendEmailSerializer(serializers.Serializer):
         return attrs
 
 class ResetForgetPasswordSerializer(serializers.Serializer):
-    otp = serializers.CharField(max_length=6, write_only=True)
+    otp_value = serializers.CharField(max_length=6, write_only=True)
     password = serializers.CharField(max_length=255, style={'input_type': 'password'}, write_only=True)
     password2 = serializers.CharField(max_length=255, style={'input_type': 'password'}, write_only=True)
 
     def validate(self, attrs):
-        otp = attrs.get('otp')
+        otp_value = attrs.get('otp_value')
         password = attrs.get('password')
         password2 = attrs.get('password2')
+        user = self.context.get('user')
      
-        print("otp..............",otp)
-        # Decode the UID to get the user
+        print("otp..............",otp_value)
+        print('user.........', user)
+        
 
-        user = User.objects.get(email="engr.adeelkhan2002@gmail.com")
 
         
         # print("screst .....................",user.secret_key)
         print("user ..............",user.secret_key)
-        
-        if otp == user.secret_key:
-            print("valid-----------------")
-        else:
-            print("invalid----------")
 
         # Verify the OTP
-        otp_validator = TOTP(user.secret_key)
-        print("validate..........",otp_validator.verify(otp))
-        if not otp_validator.verify(otp):
+        otp = TOTP(user.secret_key, digits= TOTP_DIGITS, interval=TOTP_TIME_STEP, digest=TOTP_ALGORITHM)
+
+        print("validate..........",otp.verify(otp_value))
+        if not otp.verify(otp_value):
             raise serializers.ValidationError('Invalid OTP')
+        
 
         # Check if the provided passwords match
         if password != password2:
             raise serializers.ValidationError('Passwords do not match')
 
         # Validate the new password
-        try:
-            password_validation.validate_password(password, user=user)
-        except password_validation.ValidationError as error:
-            raise serializers.ValidationError(error.messages)
-
+        
+        password_validation.validate_password(password, user=user)
+       
         # Set the new password and save the user
         user.set_password(password)
         user.save()
