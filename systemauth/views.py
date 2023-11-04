@@ -34,7 +34,7 @@ class LogInView(APIView):
         serializer.is_valid(raise_exception=True)
         email = serializer.data.get('email')
         password = serializer.data.get('password')
-        role = serializer.data.get('role')
+        
 
         user =authenticate(email=email, password = password)
 

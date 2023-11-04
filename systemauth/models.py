@@ -7,7 +7,7 @@ from pyotp import random_base32
 
 #  Custom User Manager
 class UserManager(BaseUserManager):
-  def create_user(self, email, name, roll,password=None, password2=None):
+  def create_user(self, email, name,roll,password=None, password2=None):
       """
       Creates and saves a User with the given email, name, tc and password.
       """
@@ -18,13 +18,14 @@ class UserManager(BaseUserManager):
           email=self.normalize_email(email),
           name=name,
           roll = roll
+          
       )
 
       user.set_password(password)
       user.save(using=self._db)
       return user
 
-  def create_superuser(self, email,roll, name, password=None):
+  def create_superuser(self, email ,name, password=None):
       """
       Creates and saves a superuser with the given email, name, tc and password.
       """
@@ -32,8 +33,6 @@ class UserManager(BaseUserManager):
           email,
           password=password,
           name=name,
-          roll= roll,
-          
       )
       user.is_admin = True
       user.save(using=self._db)
@@ -58,6 +57,7 @@ class User(AbstractBaseUser):
   secret_key = models.CharField(max_length=16, blank=True, null=True)
   is_active = models.BooleanField(default=True)
   is_admin = models.BooleanField(default=False)
+  is_approved = models.BooleanField(default=False)
  
   objects = UserManager()
 
