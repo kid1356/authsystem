@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from .models import *
-from systemauth.serializers import UserProfileSerializer
 from systemauth.models import User
 
 
@@ -8,7 +7,7 @@ class JobSerailizer(serializers.ModelSerializer):
     posted_by = serializers.SerializerMethodField('get_posted_by')
     applicants = serializers.SerializerMethodField('get_applicants')
     applied_by = serializers.SerializerMethodField('get_applied_by')
-    # print("info..............",userId)
+
     class Meta:
         model = Job
         fields = ['id','user','posted_by','Job_Title','Job_Type','Job_Discription','is_approved','applicants','applied_by']
@@ -50,13 +49,20 @@ class JobSerailizer(serializers.ModelSerializer):
     
 
 class ApplyJobSerializer(serializers.ModelSerializer):
-    # info = JobSerailizer(many=True, read_only = True)
-    # print('inf0............',info)
+    applied = serializers.SerializerMethodField('applied_by')
     class Meta:
         model = ApplyJob
-        fields = ['id','user','JobId','file','is_approved']
+        fields = ['id','user','JobId','file','is_approved','applied']
         extra_kwargs = {
-            # 'user':{'required':True},
-            'JobId':{'required':True}
+            'JobId':{'required':True},
+            'user':{'required':True},
         }
+
+    def applied_by(self,obj):
+
+        return [
+            {
+                'name':obj.user.name
+            }
+        ]
 

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'systemauth',
     'drf_yasg',
     'job',
+    'players',
 ]
 
 MIDDLEWARE = [

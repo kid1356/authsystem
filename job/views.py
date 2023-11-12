@@ -63,6 +63,13 @@ class DeleteJobView(generics.DestroyAPIView):
 class ApplicantsJobView(APIView):
     
     def post(self, request):
+        user  = request.data.get('user')
+        job_id = request.data.get('JobId')
+
+        if ApplyJob.objects.filter(user=user, JobId= job_id).exists():
+            return Response({'msg':'You have already Applied for this Job'},status=status.HTTP_208_ALREADY_REPORTED)
+        
+
         serializer = ApplyJobSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()

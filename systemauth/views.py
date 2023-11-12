@@ -24,7 +24,7 @@ class RegisterView(APIView):
         user=serializer.save()
 
         token = get_tokens_for_user(user)
-        return Response({'token':token, 'msg':'registered successfully'},status=status.HTTP_201_CREATED)
+        return Response({'token':token, 'registered successfully':serializer.data},status=status.HTTP_201_CREATED)
     
 
 class LogInView(APIView):
@@ -39,8 +39,18 @@ class LogInView(APIView):
         user =authenticate(email=email, password = password)
 
         if user is not None:
-           token = get_tokens_for_user(user)
-           return Response ({'token':token ,"user data":serializer.data,'msg':'Login Successfully'}, status=status.HTTP_200_OK)
+           
+            user_roll = user.roll
+            if user_roll == 'Captain':
+               msg = 'Captain Login'
+            elif user_roll == 'Player':
+               msg = 'Player Login'
+            else:
+                msg = 'user login'
+
+            
+            token = get_tokens_for_user(user)
+            return Response ({'token':token ,"user data":serializer.data,'msg':msg}, status=status.HTTP_200_OK)
         
         return Response({'Errors':'Login credentail is invalid' }, status=status.HTTP_400_BAD_REQUEST)
     
