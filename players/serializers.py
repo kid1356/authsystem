@@ -5,11 +5,12 @@ class TeamSerializer(serializers.ModelSerializer):
     captain_name = serializers.SerializerMethodField()
     class Meta:
         model = Team
-        fields = ['captain','captain_name', 'team_name', 'city','coach_name', 'coach_email']
+        fields = ['captain_name', 'team_name', 'city','coach_name', 'coach_email','image']
         extra_kwargs = {
             # 'captain':{'required':True},
             'team_name':{'required':True},
             'coach_name': {'required':True},
+            'image':{'required': True},
         }
 
     def get_captain_name(self, obj):

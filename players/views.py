@@ -1,23 +1,16 @@
-from django.shortcuts import render
+
 from .serializers import *
 from rest_framework.views import APIView
-from rest_framework import permissions,status
+from rest_framework import status
 from rest_framework.response import Response
+from .permissions import *
 # Create your views here.
 
-class CustomPermissions(permissions.BasePermission):
-    def has_permission(self, request, view):
 
-        return request.user.roll == 'Captain'
-    
-class IsCaptainOfPlayer(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        return obj.captain == request.user
-
-
+#Team views
 
 class TeamRegisterView(APIView):
-    permission_classes = [CustomPermissions]
+    permission_classes = [CaptainPermissions]
 
     def post(self, request):
         team = request.data.get('team_name')
@@ -48,27 +41,95 @@ class GetTeamView(APIView):
         else:
             teams = Team.objects.all()
             serializer = TeamSerializer(teams, many=True)
-            return Response({'Teams':serializer.data}, status= status.HTTP_200_OK)
+            return Response({'All Teams':serializer.data}, status= status.HTTP_200_OK)
+        
 
+class PatchTeamView(APIView):
+    permission_classes = [IsCaptainOfPlayer]
+    def patch(self,request, id):
+        try:
+            team = Team.objects.get(id=id)
+        except Team.DoesNotExist:
+            return Response("Team not found")
+        
+        if not IsCaptainOfPlayer().has_object_permission(request, self, team):
+            return Response("you are not the captain of this team", status=status.HTTP_403_FORBIDDEN)
+        
+        serializer= TeamSerializer(team, data=request.data, partial = True)
+        if serializer.is_valid(raise_exception=True):
+           serializer.save()
+           return Response({"Team Updated successfully": serializer.data}, status=status.HTTP_200_OK)
+
+
+class TeamAllPlayerView(APIView):
+    def get(self, request,id):
+        try:
+            team = Team.objects.get(id =id)
+        except Team.DoesNotExist:
+            return Response("team does not exists")
+        
+        team_serializer = TeamSerializer(team)
+        players = Player.objects.filter(Team_Id = team)
+        player_data = [{'player_name':player.player_name,'Player_email':player.player_email} for player in players]
+        response = {
+            'Team ': team_serializer.data,
+            'Players': player_data
+        }
+
+        return Response(response, status=status.HTTP_200_OK )
+
+class DeleteTeamView(APIView):
+    permission_classes = [IsCaptainOfPlayer]
+    def delete(self,request, id):
+        try:
+            team = Team.objects.get(id=id)
+            print('request_user.........', request.user)
+            print('capatain..........', team.captain)
+
+            if team.captain != request.user:
+                return Response("You are not the captain so U can not delete it", status=status.HTTP_400_BAD_REQUEST)
+            
+            serializer = TeamSerializer(team)
+            team.delete()
+        except Team.DoesNotExist:
+            return Response("Team Not Found", status=status.HTTP_404_NOT_FOUND)
+        
+        return Response({"team is deleted":serializer.data}, status=status.HTTP_200_OK)
+
+
+# Players Views
 
 class PlayerRegisterView(APIView):
-    permission_classes = [CustomPermissions]
+    permission_classes = [CaptainPermissions]
 
     def post(self, request):
-        player_email = request.data.get('player_email')
-        player_exists = Player.objects.filter(player_email = player_email).exists()
+        
+        try:
+            team  = Team.objects.get(captain = request.user)
+        except Team.DoesNotExist:
+            return Response("You are not assign to any team", status= status.HTTP_400_BAD_REQUEST)
 
-        if player_exists:
-            return Response('This Player email already Exists', status=status.HTTP_406_NOT_ACCEPTABLE)
+        player_email = request.data.get('player_email')
+
+        if Player.objects.exclude(Team_Id__captain = request.user).filter(player_email=player_email).exists():
+            return Response("Player email is taken already", status=status.HTTP_400_BAD_REQUEST)
+        
+
+        if Player.objects.filter(Team_Id = team, player_email = request.data.get('player_email')).exists():
+            return Response("player email is already registered in the current team.", status=status.HTTP_400_BAD_REQUEST)
 
         serializer = PlayerSerializer(data = request.data)
         if serializer.is_valid(raise_exception=True):
-            serializer.save(captain = request.user)
+
+            if serializer.validated_data['Team_Id'] != team:
+                return Response("You can only register players for your own team", status=status.HTTP_403_FORBIDDEN)
+            
+            serializer.save(captain = request.user, Team_Id = team)
 
             return Response({'Player register successfully':serializer.data}, status=status.HTTP_201_CREATED)
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+       
 
 class  GetPlayerView(APIView):
     def get(self, request, id=None):

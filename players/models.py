@@ -1,6 +1,8 @@
 from django.db import models
 from systemauth.models import User
 # Create your models here.
+import os
+
 
 
 class Team(models.Model):
@@ -9,6 +11,7 @@ class Team(models.Model):
     city = models.CharField(max_length=200, null=True, blank=True)
     coach_name = models.CharField(max_length=200, null= True, blank=True)
     coach_email = models.EmailField(max_length=200, null=True, blank=True, unique=True)
+    image = models.ImageField(upload_to='images/', blank=True, null=True)
 
 
 class Player(models.Model):
